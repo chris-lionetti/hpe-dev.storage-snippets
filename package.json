@@ -20,7 +20,7 @@
         "Primera",
         "3PAR"
     ],
-    "icon": "hpe-dev-icon.png",
+    "icon": "./hpe-dev-icon.png",
     "repository":{
         "type":"git",
         "url":"https://github.com/chris-lionetti/hpe-dev.storage-snippets_powershell.git"
@@ -30,7 +30,7 @@
       "snippets": [
         {
           "language": "powershell",
-          "path": "./snippets/hpe-dev_storage-snippets.json"
+          "path": "./snippets/hpe-dev_storage-snippets_powershell.json"
         }
       ]
     }
