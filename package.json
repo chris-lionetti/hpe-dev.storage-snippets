@@ -1,0 +1,37 @@
+{
+    "name" : "hpe-dev.storage-snippets",
+    "version": "0.0.1", 
+    "publisher": "hpe-dev",
+    "engines":{
+        "vscode":"^1.28.0"
+    },
+    "license": "Apache-2.0",
+    "displayName": "HPE DEV Storage Snippets",
+    "description": "A collection of commonly used code Snippents for HPE Nimble Storage using PowerShell. Eventually this extension may cover other languages like Python as well as other platforms such as Primera",
+    "categories":[
+        "Snippets"
+    ],
+    "galleryBanner":{
+        "color":"#3B4D54",
+        "theme":"dark"
+    },
+    "keywords":[    
+        "Nimble",
+        "Primera",
+        "3PAR"
+    ],
+    "icon": "hpe-dev-icon.png",
+    "repository":{
+        "type":"git",
+        "url":"https://github.com/chris-lionetti/hpe-dev.storage-snippets_powershell.git"
+    },
+    "preview": true,
+    "contributes": {
+      "snippets": [
+        {
+          "language": "powershell",
+          "path": "./snippets/hpe-dev_storage-snippets.json"
+        }
+      ]
+    }
+  }

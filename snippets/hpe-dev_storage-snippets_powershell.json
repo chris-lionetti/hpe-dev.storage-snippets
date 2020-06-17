@@ -1,0 +1,202 @@
+// /////////////////////////////////////////////////////////////////////////////////////////
+// A Snippets file that covers HPE Nimble Storage when using the PowerShell Language
+// TO Do;
+// 		Add 3PAR and Primera Powershell Snippents to match the Nimble powerShell commands
+//		Add additional Python code snippets from the SDK for Nimble Storage in another file  
+// Author: Chris Lionetti
+//
+// (C)2020 Hewlett Packard Enterprise.
+{	"Nimble Install PSTK"	:{
+    "prefix"		:	"Nimble Install PSTK",
+    "body"			: [		"$$NimblePSTKuri					= 'https://github.com/HewlettPackard/HPEAzureStackOnHPENimbleStorage/raw/master/HPENimblePowerShellToolkit.300.zip' ",
+                            "$$PSMPath							= 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules\\HPENimblePowerShellToolkit' ",
+                            "$$WindowsPowerShellModulePath 		= 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules' ", 
+                            "$$TempPath 						= [system.IO.Path]::GetTempPath()",
+                            "if ( Test-Path $$PSMPath -pathtype Container )",
+                            "	{	write-info 'The Nimble PowerShell Toolkit was already detected. aborting installation.' ",
+                            "	} else ",
+                            "	{	invoke-webrequest -uri $$NimblePSTKuri -outfile ( $$TempPath + \"HPENimblePowerShellToolkit.zip\" ) ",
+                            "		expand-archive -path ( $$TempPath + \"HPENimblePowerShellToolkit.zip\" ) -DestinationPath $$WindowsPowerShellModulePath ",
+                            "	} " 
+                      ],
+    "description"	:	"This command will download and install the HPE Nimble PowerShell Toolkit into the default Module Directory"
+},
+"Nimble Install NWT": {
+    "prefix"		: "Nimble Install NWT",
+    "body"			: [		"# Download and instlall the Nimble Windows Toolkit unless already installed. ",
+                            "$$NWTsoftware			=	'Nimble Windows Toolkit' ",
+                            "$$installed = (Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Where { $$_.DisplayName -eq 'Nimble Windows Toolkit' }) -ne $$null ",
+                            "if ( -not $$installed) ",
+                            "	{   # If NWT not installed, silent install it ",
+                            "		invoke-webrequest -uri $$NWTuri -outfile 'C:\\NimbleStorage\\Setup-NimbleNWT-current.exe' ",
+                            "		$$NWTEXE = 'C:\\NimbleStorage\\Setup-NimbleNWT-current.exe' ",
+                            "		$$NWTArg1 = 'EULAACCEPTED=Yes' ",
+                            "		$$NWTArg2 = 'HOTFIXPASS=Yes' ",
+                            "		$$NWTArg3 = 'RebootYesNo=Yes' ",
+                            "		$$NWTArg4 = 'NIMBLEVSSPORT=Yes' ",
+                            "		$$NWTArg5 = '/silent' ",
+                            "		& $NWTEXE $$NWTArg1 $$NWTArg2 $$NWTArg3 $$NWTArg4 $$NWTArg5 ",
+                            "		# The above command is similar to the command listed in the next comment, which is derived from the users guide .",
+                            "		# Invoke-Command -ScriptBlock 'C:\\NimbleStorage\\Setup-NimbleNWTx64.0.0.0.XXX.exe EULAACCEPTED=Yes HOTFIXPASS=Yes RebootYesNo=Yes NIMBLEVSSPORT=Yes /silent' ",
+                            "		write-info 'Initiating download and Silent Installation of the Nimble Windows Toolkit" "Warning' ",
+                            "	} "
+                      ],
+    "description"	:	"This snippet will download and install the Nimble Windows Toolkit silently, once complete you will need to reboot the server"
+},
+"Nimble Add NWT PSPath": {	
+    "prefix"		: "Nimble Add NWT PSPath",
+    "body"			: [		"$$RegInstalled			=	( Get-ItemProperty HKLM:\\software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | { $$_.DisplayName -eq 'Nimble Windows Toolkit' } ) ",
+                            "$$NWTPath 				=	$$RegInstalled.InstallLocation",
+                            "$$NWTModulePath		= 	$$NWTPath+'\\bin' ",
+                            "$$CurrentPSPath		=	[Environment]::GetEnvironmentVariable(""PSModulePath"",""Machine"") ",
+                            "$$DoesThisPathExistYet	=	$$false ",
+                            "ForEach ($PsPathDetected in ($CurrentPSPath -split ';') ) ",
+                            "	{	# Lets make sure this path isnt already in the existing machine path ", 
+                            "		if ( $PSPathDetected -eq $NWTModulePath ) ",
+                            "			{	$DoesThisPathExistYet = $True ",
+                            "			} ",
+                            "	} ",
+                            "if ( -not $$DoesThisPathExistYet )",
+                            "	{	[Environment]::SetEnvironmentVariable( ""PSModulePath"", $CurrentValue + [System.IO.Path]::PathSeperator + $$NWTModulePath , ""Machine"" ) ",
+                            "	} ",
+
+
+                      ],
+    "description"	: "Add the Nimble Windows Toolkit PowerShell Commands to the searchable path of modules: Note this command adds the NWT Path to a machine-wide envrionment variable."
+},
+"Nimble Config NWT"	: {	
+    "prefix"		: "Nimble Config NWT",
+    "body"			: [		"$$NimbleArrayIP 		= 	'$1' ",
+                            "$$NimbleArrayUser		=	'$2' ",
+                            "$$NimbleArrayPassword	=	'$3' ",
+                            "$$RegInstalled			=	( Get-ItemProperty HKLM:\\software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | { $$_.DisplayName -eq 'Nimble Windows Toolkit' } ) ",
+                            "$$NWTPath 				=	$$RegInstalled.InstallLocation",
+                      ],
+    "description"	: "Configure the Nimble Windows Toolkit by connecting this host using an array Username and Password"
+},
+"Nimble CredObj"		: {
+    "prefix"		: 	"Nimble CredObj",
+    "body"			:	[	"$$Username		=	'$1' ",
+                            "$$password 	=	ConvertTo-SecureString -string '$2' -AsPlainText -force ",
+                            "$$Credential	=	New-Object -Type PSCredential( $$username, $$password ) ",
+                            "$0 "	
+                        ],
+    "description"	:	"Insert a Credential creation Object to allow for Nimble Array Logon, you will need to supply the Username and the password "
+},
+"Nimble AutoLogon"	: {
+    "prefix"		: "Nimble AutoLogon",
+    "body"			: [		"# This command assumes the HPE Nimble PowerShell Toolkit exists",
+                            "$$NimbleArrayIP	= 	'$1' ",
+                            "$$NimbleUsername	=	'$2' ",
+                            "$$NimblePassword	=	'$3' ",
+                            "$$PasswordObj 		=	ConvertTo-SecureString -string $$NimblePassword -AsPlainText -force ",
+                            "$$MyCredential		=	New-Object -Type PSCredential( $$NimbleUsername, $$PasswordObj ) ",
+                            "Connect-NSGroup -Group ""$$NimbleArrayIP"" -Credential $$MyCredential -ignoreServerCertificate ",
+                            "$0 "
+                      ],
+    "description"	: "Allows for Scripted connection to a Nimble Array using the Nimble Windows Toolkit"
+},
+"Nimble Create iSCSI InitiatorGroup": {
+    "prefix"		: "Nimble Create iSCSI InititatorGroup",
+    "body"			: [		"# This command assumes the HPE Nimble PowerShell Toolkit exists and is connected to an array. ",
+                            "$$NimProtocol = 'iSCSI' ",
+                            "$$MyIQN 		= ( Get-InitiatorPort 		| where { $$_.ConnectionType -like 'iSCSI' ).NodeAddress ",
+                            "if ( -not (Get-NSInitiator | where { $$_.iqn -like $MyIQN } ) ) ",
+                            "	{ 	write-info 'Creating a new Initiator since one not detected for this host' ",
+                            "		New-NSInitiator -access_protocol $$NimProtocol -label (hostname)+'_iqn' -iqn $$MyIQN ",
+                            "	}",
+                            "$$MyInit 		= ( Get-NSInitiator 		| where { ($$_.iqn } -like $MyIQN ) ",
+                            "$$MyInitID		= $$MyInit.id ",
+                            "$$MyIGroup 	= ( Get-NSInitiatorGroup 	| where { ($$_.iscsi_initiators).iqn -like $$MyIQN } ) ",
+                            "$$MyIGroupId 	= $$MyIGroup.id ",
+                            "$$MyIGroupName	= $$MyIGroup.Name ",
+                            "If ( $$MyIGroup.name -like (hostname) ) ",
+                            "	{ 	write-warning 'The Initiator Group using this IQN is not using this servers name its name.' ",
+                            "	  	write-warning 'This Script will use the Initiator Group ID named $MyIGroupName.' ",
+                            "	}",
+                            "if ( -not $$MyIGroup ) " ,
+                            "	{ 	write-info 'Creating a new Initiator Group since one was not detected for this initiator' ",
+                            "		New-NSInitiatorGroup -name (hostname) -access_protocol $$NimProtocol -iqn $$MyIQN ",
+                            "	}"
+                      ],
+    "description"	: "Creates an Initiator and Initiator Group for the localhost. Will not create new Initiator or InitiatorGroup if those entities already exist. No fields in this snippet need to be changed."
+},
+"Nimble Create FC InitiatorGroup": {
+    "prefix"		: "Nimble Create FC InititatorGroup ",
+    "body"			: [		"# This command assumes the HPE Nimble PowerShell Toolkit exists and is connected to an array ",
+                            "$$MyInitIds 	= @() ",
+                            "$$FCHBACount	= 0 ",
+                            "$$NimProtocol 	= 'FC' ",
+                            "foreach( $$WWPN in ( get-initiatorport | where { $$_.ConnectionType -like 'Fibre Channel' }).portaddress  ) ",
+                            "	{	# must convert each WWPN to standard name... ",
+                            "		# i.e. comes in as 5000a3c5..., goes out at 50:00:a3:... ",
+                            "		$$FixedWWPN = $WWPN -replace '(..)(?=.)','$1: ",
+                            "		if ( -not ( Get-NSInitiator | where { $$_.wwpn -like $FixedWWPN } ) ",
+                            "			{	# The WWPN does not exist as a Initiator, so we must create one. ",
+                            "				New-NSInitiator -access_protocol fc -wwpn $$FixedWWPN -alias (hostname)+"_"+$$FCHBACount ",
+                            "			}",
+                            "		$$MyInitIds += ( Get-NSInitiator | where { $$_.wwpn -like $$FixedWWPN } ).id ",
+                            "		$$FCHBACount+=1",
+                            "	}",
+                            "if ( -not ( Get-NSInitiatorGroup | where { $$_.name -like (hostname) } ) ) ",
+                            "	{	# No initiator Group with this hostname exists, so lets create one. ",
+                            "		New-NSInitiator -name (hostname) -access_protocol $$NimProtocol ",
+                            "	}",
+                            "$$MyInitGroupId = ( Get-NSInitiatorGroup | where { $$_.name -like (hostname) } ).id ",
+                            "foreach ( $MyInitId in $MyInitIds ) ",
+                            "	{	# Now we must add each Initiator to the Initiator Group ",
+                            "		$$DoesItAlreadyExist = $$false ",
+                            "		foreach ($$FCInit in (Get-NSInitiatorGroup).fc_initiators ) ",
+                            "			{	if ( $$FCInit -like $$MyInitID ) ",
+                            "				{	$$DoesItAlreadyExist = $$True ",
+                            "				} ",
+                            "		if ( -not $$DoesItAlreadyExist ) ",
+                            "			{	# This HBA doesnt already exist, so I need to add it. ",
+                            "				Set-NSInitiatorGroup -id $$MyInitGroupId -fc_initiators $$MyInitID ",
+                            "			}",
+                            "	}"
+    ],
+    "description"	: "Creates an Initiator and Initiator Group for the localhost. Will not create new Initiator if entities already exist and will use existing. If no Initiator Group exists with this hostname, will create a new Initiator Group for this host. No fields in this snippet need to be changed."
+},
+"Nimble Add FC Volume": {
+    "prefix"		: "Nimble Add New FC Drive",
+    "body"			: [		"# This command assumes the HPE Nimble PowerShell Toolkit exists and is connected to an array. ",
+                            "$$Size 		= ( $1 * 1024 ) 		# This number is in MibiBytes, so by multiplying by 1024 we get GibiBytes ",
+                            "$$DriveLetter 	= (Get-AvailableDriveLetter -ReturnFirstLetterOnly) 	# change this with a drive letter like 'F' if you want to specify ",
+                            "$$VolName		= '$2MyVolumeName' ",
+                            "$$Description 	= '$3 A Textual Description of your new Volume' ",
+                            "$$VolumeLabel	= '$4 The Volume Label that should be applied to the formatted Volume' ",
+                            "$$MyVolumeId 	= ( New-NSVolume -name $$MyVolName -size $$Size -description $$Description ).id ",
+                            "$$MyIGroupId 	= ( Get-NSInitiatorGroup -name (hostname) ).id ",
+                            "$$MyAccessRec	= ( New-NSAccessControlRecord -VolId $$MyVolumeId -Initiator_Group_Id $$MyIGroupId ) ",
+                            "$$MyVolSerial	= ( Get-NSVolume -name $$VolName).serial_number ",
+                            "Rescan | diskpart ",
+                            "$$WinDiskNum = ( Get-Disk | where {$$_.SerialNumber -like $MyVolSerial } ).number ",
+                            "Get-Disk $$WinDiskNum | Initialize-Disk -PartitionStyle GPT ",
+                            "Get-Disk $$WinDiskNum | where-object {$$_.IsOffline -eq $$true} | Set-Disk -isOffline $False ",
+                            "Get-Disk $$WinDiskNum | where-object {$$_.PartitionStyle -eq 'RAW'} | New-Partition -UseMaximumSpace | Format-Volume -DriveLetter $$DriveLetter -FileSystemLabel $$VolumeLabel -confirm $$false",
+                      ],
+    "description"	: "Creates a new Volume and exposes that Volume to this host via the assigned drive letter."
+},
+"Nimble Add iSCSI Volume": {
+    "prefix"		: "Nimble Add New iSCSI Volume",
+    "body"			: [		"# This command assumes the HPE Nimble PowerShell Toolkit exists and is connected to an array. ",
+                            "$$Size 		= ( $1 * 1024 ) 		# This number is in MibiBytes, so by multiplying by 1024 we get GibiBytes ",
+                            "$$DriveLetter 	= (Get-AvailableDriveLetter -ReturnFirstLetterOnly) 	# change this with a drive letter like 'F' if you want to specify ",
+                            "$$VolName		= '$2MyVolumeName' ",
+                            "$$Description 	= '$3 A Textual Description of your new Volume' ",
+                            "$$VolumeLabel	= '$4 The Volume Label that should be applied to the formatted Volume' ",
+                            "$$MyVolumeId 	= ( New-NSVolume -name $$MyVolName -size $$Size -description $$Description ).id ",
+                            "$$MyIGroupID 	= ( Get-NSInitiatorGroup 	| where { ($$_.iscsi_initiators).iqn -like $$MyIQN } ) "
+                            "$$MyAccessRec	= ( New-NSAccessControlRecord -VolId $$MyVolumeId -Initiator_Group_Id $$MyIGroupId ) ",
+                            "$$MyVolSerial	= ( Get-NSVolume -name $$VolName).serial_number ",
+                            "Connect-NimVolume -NimbleVolumeName $$VolName"
+                            "Rescan | diskpart ",
+                            "$$WinDiskNum = ( Get-Disk | where {$$_.SerialNumber -like $MyVolSerial } ).number ",
+                            "Get-Disk $$WinDiskNum | Initialize-Disk -PartitionStyle GPT ",
+                            "Get-Disk $$WinDiskNum | where-object {$$_.IsOffline -eq $$true} | Set-Disk -isOffline $False ",
+                            "Get-Disk $$WinDiskNum | where-object {$$_.PartitionStyle -eq 'RAW'} | New-Partition -UseMaximumSpace | Format-Volume -DriveLetter $$DriveLetter -FileSystemLabel $$VolumeLabel -confirm $$false",
+                      ],
+    "description"	: "Creates a new Volume and exposes that Volume to this host via the assigned drive letter."
+},
+}
