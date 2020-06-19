@@ -25,11 +25,13 @@
     "prefix"		: "Nimble Install NWT",
     "body"			: [		"# Download and instlall the Nimble Windows Toolkit unless already installed. ",
                             "$$NWTsoftware			=	'Nimble Windows Toolkit' ",
+                            "$$NWTuri               =   'https://github.com/HewlettPackard/HPEAzureStackOnHPENimbleStorage/raw/master/Setup-NimbleNWT-x64.7.0.2.56.exe"
+                            "$$TempPath 			=   [system.IO.Path]::GetTempPath()",
                             "$$installed = (Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Where { $$_.DisplayName -eq 'Nimble Windows Toolkit' }) -ne $$null ",
                             "if ( -not $$installed) ",
                             "	{   # If NWT not installed, silent install it ",
-                            "		invoke-webrequest -uri $$NWTuri -outfile 'C:\\NimbleStorage\\Setup-NimbleNWT-current.exe' ",
-                            "		$$NWTEXE = 'C:\\NimbleStorage\\Setup-NimbleNWT-current.exe' ",
+                            "		invoke-webrequest -uri $$NWTuri -outfile $$TempPath+'\\Setup-NimbleNWT-current.exe' ",
+                            "		$$NWTEXE  = $$TempPath+'\\Setup-NimbleNWT-current.exe' ",
                             "		$$NWTArg1 = 'EULAACCEPTED=Yes' ",
                             "		$$NWTArg2 = 'HOTFIXPASS=Yes' ",
                             "		$$NWTArg3 = 'RebootYesNo=Yes' ",
@@ -37,7 +39,7 @@
                             "		$$NWTArg5 = '/silent' ",
                             "		& $NWTEXE $$NWTArg1 $$NWTArg2 $$NWTArg3 $$NWTArg4 $$NWTArg5 ",
                             "		# The above command is similar to the command listed in the next comment, which is derived from the users guide .",
-                            "		# Invoke-Command -ScriptBlock 'C:\\NimbleStorage\\Setup-NimbleNWTx64.0.0.0.XXX.exe EULAACCEPTED=Yes HOTFIXPASS=Yes RebootYesNo=Yes NIMBLEVSSPORT=Yes /silent' ",
+                            "		# Invoke-Command -ScriptBlock 'C:\\tempfolder\\Setup-NimbleNWTx64.0.0.0.XXX.exe EULAACCEPTED=Yes HOTFIXPASS=Yes RebootYesNo=Yes NIMBLEVSSPORT=Yes /silent' ",
                             "		write-info 'Initiating download and Silent Installation of the Nimble Windows Toolkit" "Warning' ",
                             "	} "
                       ],
@@ -69,8 +71,14 @@
     "body"			: [		"$$NimbleArrayIP 		= 	'$1' ",
                             "$$NimbleArrayUser		=	'$2' ",
                             "$$NimbleArrayPassword	=	'$3' ",
-                            "$$RegInstalled			=	( Get-ItemProperty HKLM:\\software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | { $$_.DisplayName -eq 'Nimble Windows Toolkit' } ) ",
-                            "$$NWTPath 				=	$$RegInstalled.InstallLocation",
+                            "if ( import-Module -name Nimble.PowershellCmdlets ) ",
+                            "   {   $$password 	    =	ConvertTo-SecureString -string '$$NimbleArrayPassword' -AsPlainText -force ",
+                            "       $$Credential	=	New-Object -Type PSCredential( $$NimbleArrayUser, $$password ) ",
+                            "       Set-NWTConfiguration -GroupMgmtIP ""$$NimbleArrayPassword"" -CredentialObj $$Credential ",
+                            "   } else",
+                            "   {   write-error 'The Nimble.PowerShellCmdlets module was not found, you may need to either install the NWT, or add the NWT Powershell Module to the PowerShell Path, Both of these can be done using snippets' ",
+                            "$0" ,
+
                       ],
     "description"	: "Configure the Nimble Windows Toolkit by connecting this host using an array Username and Password"
 },
@@ -199,4 +207,39 @@
                       ],
     "description"	: "Creates a new Volume and exposes that Volume to this host via the assigned drive letter."
 },
+"Nimble Store Creds In Registry":{
+    "prefix"        : "Nimble Store Creds in Registry",
+    "body"          : [     "$$MyUsername = Read-Host -Prompt 'Please type your Nimble Array Username: '",
+                            "$$MyPassword = Read-Host -Prompt 'Please type your Nimble Array Password: '",
+                            "$$HKCUpath   = 'HKCU:\\Software\\HPENimbleStorageScripting",
+                            "if ( -not get-item -path $$HKCUPath ) ",
+                            "   { New-Item -Path $$HKCUPath ",
+                            "   }",
+                            "if ( get-item -path $$HKCUPath -name NimbleUsername )  ",
+                            "   { set-item -path $$HKCUPath -name NimbleUsername -value $$MyUsername ",
+                            "   } else ",
+                            "   { new-item -path $$HKCUPath -name NimbleUsername -value $$MyUsername ",
+                            "   } ",
+                            "$$EncryptedPassword = ConvertTo-SecureString $$MyPassword -AsPlainText -force"
+                            "if ( get-item -path $$HKCUPath -name NimblePassword )  ",
+                            "   { set-item -path $$HKCUPath -name NimblePassword -value $$EncryptedPassword ",
+                            "   } else ",
+                            "   { new-item -path $$HKCUPath -name NimblePassword -value $$EncryptedPassword ",
+                            "   } ",
+                            " # This snippet will allow you to save an encrypted password in the registry so that your scripts"
+                            " # no longer need to have hardcoded credentials in them. This is protected by the registry since only"
+                            " # the user who saved the data (current user hive) can decrypt the data."
+                      ],
+    "description"   : "Will prompt the user for a username and password to store encrypted in the current user section of the Registry."
+},
+"Nimble Retrieve Creds From Registry":{
+    "prefix"        : "Nimble Retrieve Creds from Registry",
+    "body"          : [     "$$HKCUpath              = 'HKCU:\\Software\\HPENimbleStorageScripting",
+                            "$$MyUsername            = ( get-item -path $$HKCUPath -name 'NimbleUsername' ) ",
+                            "$$MyEncryptedPassword   = ( get-item -path $$HKCUPath -name 'NimbleUsername' ) ",
+                            "$$Credential	         = New-Object -Type PSCredential( $$username, $$MyEncryptedPassword ) ",
+                            "# You can use the above credential variable as the credential object for Connect-NsGroup command"
+    ],
+    "description"   : "Will retrieve previously saved username and encrypted password from registry and place items into a credential object."
+} 
 }

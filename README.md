@@ -27,4 +27,4 @@ understand the requirements for a sucessfull submission.
 * To start using your extension with Visual Studio Code copy it into the `<user home>/.vscode/extensions` folder and restart Code.
 * once this extension is posted on the HPE Github site, and submitted to the Extension Gallery, you will search for 'HPE' and find this extension and automatically install it.
 
-![hpe dev vs code theme](screenshot.png)
+![hpe dev vs code snippet](screenshot.png)
